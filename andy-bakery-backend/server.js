@@ -78,6 +78,7 @@ app.use(errorMiddleware);
 
 // ── Start Server ─────────────────────────────────────────────────
 const prisma = require('./src/db/prisma');
+const { initializeEmailService } = require('./src/utils/emailService');
 
 async function startServer() {
   try {
@@ -90,14 +91,23 @@ async function startServer() {
     const productCount = await prisma.product.count();
     console.log(`✅ Products table ready (${productCount} products)`);
     
+    // Initialize email service
+    console.log('');
+    await initializeEmailService();
+    console.log('');
+    
     server.listen(PORT, () => {
       console.log(`✅ Server running on http://localhost:${PORT}`);
       console.log(`📍 API Base: http://localhost:${PORT}/api`);
       console.log(`🛍️  Products: http://localhost:${PORT}/api/products`);
+      console.log(`📧 Email service: Ready for notifications`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error.message);
     console.error('Make sure DATABASE_URL is set and database is accessible');
+    process.exit(1);
+  }
+}
     process.exit(1);
   }
 }
