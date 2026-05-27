@@ -25,12 +25,30 @@ const orderInclude = {
   },
 };
 
+// ================= EMAIL CONFIG =================
+
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
+});
+
+// Verify SMTP during startup
+transporter.verify((error) => {
+  if (error) {
+    console.error('❌ SMTP verification failed:', error.message);
+  } else {
+    console.log('✅ SMTP server ready');
+  }
 });
 
 const formatOrderItems = (orderItems) => {
@@ -45,28 +63,59 @@ const formatOrderItems = (orderItems) => {
 };
 
 const sendOrderConfirmationEmail = async (order) => {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || !order.customerEmail) {
-    return;
-  }
+  try {
+    if (
+      !process.env.EMAIL_USER ||
+      !process.env.EMAIL_PASS ||
+      !order.customerEmail
+    ) {
+      console.log('⚠️ Email skipped: Missing configuration');
+      return;
+    }
 
-  await transporter.sendMail({
-    from: `"Andy Bakery" <${process.env.EMAIL_USER}>`,
-    to: order.customerEmail,
-    subject: 'Order Confirmed — Andy Bakery',
-    text: [
-      `Hi ${order.customerName},`,
-      '',
-      'Thank you for your order from Andy Bakery.',
-      '',
-      'Order items:',
-      formatOrderItems(order.orderItems),
-      '',
-      `Total price: $${order.totalPrice.toFixed(2)}`,
-      '',
-      'We will contact you shortly',
-    ].join('\n'),
-  });
+    const mailOptions = {
+      from: `"Andy Bakery" <${process.env.EMAIL_USER}>`,
+      to: order.customerEmail,
+      subject: 'Order Confirmed — Andy Bakery',
+      text: [
+        `Hi ${order.customerName},`,
+        '',
+        'Thank you for your order from Andy Bakery.',
+        '',
+        'Order items:',
+        formatOrderItems(order.orderItems),
+        '',
+        `Total price: $${order.totalPrice.toFixed(2)}`,
+        '',
+        'We will contact you shortly.',
+        '',
+        'Andy Bakery 🍰',
+      ].join('\n'),
+    };
+
+    await Promise.race([
+      transporter.sendMail(mailOptions),
+
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error('Email sending timeout')),
+          15000
+        )
+      ),
+    ]);
+
+    console.log(
+      `✅ Order confirmation email sent to ${order.customerEmail}`
+    );
+  } catch (error) {
+    console.error(
+      '❌ Failed to send order confirmation email:',
+      error.message
+    );
+  }
 };
+
+// ================= CREATE ORDER =================
 
 const createOrder = async (req, res, next) => {
   try {
@@ -91,9 +140,15 @@ const createOrder = async (req, res, next) => {
 
     const order = await prisma.$transaction(async (tx) => {
       const productIds = orderItems.map((item) => item.productId);
+
       const products = await tx.product.findMany({
-        where: { id: { in: productIds } },
-        select: { id: true, price: true },
+        where: {
+          id: { in: productIds },
+        },
+        select: {
+          id: true,
+          price: true,
+        },
       });
 
       if (products.length !== productIds.length) {
@@ -101,13 +156,17 @@ const createOrder = async (req, res, next) => {
         throw new Error('One or more products not found');
       }
 
-      const productPriceById = new Map(products.map((product) => [product.id, product.price]));
+      const productPriceById = new Map(
+        products.map((product) => [product.id, product.price])
+      );
 
       const items = orderItems.map((item) => {
         const unitPrice = productPriceById.get(item.productId);
 
         if (unitPrice === undefined || unitPrice === null) {
-          throw new Error(`Product not found for order item: ${item.productId}`);
+          throw new Error(
+            `Product not found for order item: ${item.productId}`
+          );
         }
 
         return {
@@ -129,25 +188,26 @@ const createOrder = async (req, res, next) => {
           customerEmail,
           deliveryAddress,
           totalPrice: calculatedTotal,
+
           orderItems: {
             create: items,
           },
         },
+
         include: orderInclude,
       });
     });
 
-    try {
-      await sendOrderConfirmationEmail(order);
-    } catch (emailError) {
-      console.error('Failed to send order confirmation email:', emailError);
-    }
+    // Email should NEVER stop order creation
+    await sendOrderConfirmationEmail(order);
 
     const io = getIO();
+
     if (io) {
       io.emit(EVENTS.NEW_ORDER, order);
+
       io.emit(EVENTS.NEW_NOTIFICATION, {
-        message: `🔔 New order from ${order.customerName}`
+        message: `🔔 New order from ${order.customerName}`,
       });
     }
 
@@ -156,6 +216,8 @@ const createOrder = async (req, res, next) => {
     next(error);
   }
 };
+
+// ================= GET ORDERS =================
 
 const getOrders = async (req, res, next) => {
   try {
@@ -169,6 +231,8 @@ const getOrders = async (req, res, next) => {
     next(error);
   }
 };
+
+// ================= TRACK ORDERS =================
 
 const trackOrders = async (req, res, next) => {
   try {
@@ -186,6 +250,7 @@ const trackOrders = async (req, res, next) => {
           mode: 'insensitive',
         },
       },
+
       include: orderInclude,
       orderBy: { createdAt: 'desc' },
     });
@@ -196,10 +261,15 @@ const trackOrders = async (req, res, next) => {
   }
 };
 
+// ================= GET ORDER BY ID =================
+
 const getOrderById = async (req, res, next) => {
   try {
     const order = await prisma.order.findUnique({
-      where: { id: req.params.id },
+      where: {
+        id: req.params.id,
+      },
+
       include: orderInclude,
     });
 
@@ -214,6 +284,8 @@ const getOrderById = async (req, res, next) => {
   }
 };
 
+// ================= UPDATE STATUS =================
+
 const updateOrderStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
@@ -224,7 +296,9 @@ const updateOrderStatus = async (req, res, next) => {
     }
 
     const currentOrder = await prisma.order.findUnique({
-      where: { id: req.params.id },
+      where: {
+        id: req.params.id,
+      },
     });
 
     if (!currentOrder) {
@@ -233,24 +307,34 @@ const updateOrderStatus = async (req, res, next) => {
     }
 
     const allowed = allowedTransitions[currentOrder.status];
+
     if (!allowed.includes(status)) {
       res.status(400);
+
       throw new Error(
         `Cannot change status from ${currentOrder.status} to ${status}`
       );
     }
 
     const order = await prisma.order.update({
-      where: { id: req.params.id },
-      data: { status },
+      where: {
+        id: req.params.id,
+      },
+
+      data: {
+        status,
+      },
+
       include: orderInclude,
     });
 
     const io = getIO();
+
     if (io) {
       io.emit(EVENTS.ORDER_UPDATED, order);
+
       io.emit(EVENTS.NEW_NOTIFICATION, {
-        message: `🔔 Order status updated to ${order.status}`
+        message: `🔔 Order status updated to ${order.status}`,
       });
     }
 
