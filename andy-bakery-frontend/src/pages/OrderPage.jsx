@@ -6,6 +6,7 @@ import Footer from '../components/Footer';
 import Spinner from '../components/Spinner';
 import { createOrder } from '../api/orderApi';
 import { Phone, MapPin, Check } from 'lucide-react';
+import { formatCurrency } from '../utils/currency';
 
 export default function OrderPage() {
   const navigate = useNavigate();
@@ -168,11 +169,11 @@ export default function OrderPage() {
                         <div>
                           <p className="font-bold text-gray-800 leading-tight">{item.product.name}</p>
                           <p className="text-sm text-gray-500 mt-1">
-                            Qty: {item.quantity} × ${item.product.price.toFixed(2)}
+                            Qty: {item.quantity} × {formatCurrency(item.product.price)}
                           </p>
                         </div>
                         <p className="font-bold text-gray-900">
-                          ${(item.product.price * item.quantity).toFixed(2)}
+                          {formatCurrency(item.product.price * item.quantity)}
                         </p>
                       </div>
                     ))}
@@ -181,7 +182,7 @@ export default function OrderPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between text-gray-500 font-medium">
                       <span>Subtotal</span>
-                      <span>${cartTotal.toFixed(2)}</span>
+                      <span>{formatCurrency(cartTotal)}</span>
                     </div>
                     <div className="flex justify-between text-gray-500 font-medium text-sm">
                       <span>Delivery</span>
@@ -190,7 +191,7 @@ export default function OrderPage() {
                     <div className="flex justify-between items-end pt-6 mt-4 border-t border-gray-100">
                       <span className="text-lg font-medium text-gray-900">Total</span>
                       <span className="text-3xl font-extrabold text-[#7B4F2E]">
-                        ${cartTotal.toFixed(2)}
+                        {formatCurrency(cartTotal)}
                       </span>
                     </div>
                   </div>

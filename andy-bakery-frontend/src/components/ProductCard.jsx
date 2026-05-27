@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { ShoppingCart, Cake } from 'lucide-react';
+import { formatCurrency } from '../utils/currency';
 
 export default function ProductCard({ product, onOrderNow }) {
   const [isAdding, setIsAdding] = useState(false);
@@ -62,7 +63,7 @@ export default function ProductCard({ product, onOrderNow }) {
         {/* Price and Button */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
           <span className="text-2xl font-bold text-[#7B4F2E]">
-            ${product.price.toFixed(2)}
+            {formatCurrency(product.price)}
           </span>
 
           <button

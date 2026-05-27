@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminNavbar';
 import Spinner from '../../components/Spinner';
 import axiosInstance from '../../api/axiosInstance';
+import { formatCurrency } from '../../utils/currency';
 
 const brown = '#8B5A2B';
 
@@ -261,7 +262,7 @@ export default function ManageProducts() {
                         {product.category}
                       </td>
                       <td className="px-6 py-4 font-semibold" style={{ color: brown }}>
-                        ${product.price.toFixed(2)}
+                        {formatCurrency(product.price)}
                       </td>
                       <td className="px-6 py-4">
                         <span

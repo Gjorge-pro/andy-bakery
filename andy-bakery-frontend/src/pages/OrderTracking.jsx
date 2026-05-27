@@ -5,6 +5,7 @@ import Spinner from '../components/Spinner';
 import axiosInstance from '../api/axiosInstance';
 import toast from 'react-hot-toast';
 import socket, { EVENTS } from '../socket';
+import { formatCurrency } from '../utils/currency';
 
 const statusColors = {
   PENDING: 'bg-yellow-100 text-yellow-800',
@@ -193,10 +194,10 @@ export default function OrderTracking() {
                               className="font-semibold"
                               style={{ color: '#7B4F2E' }}
                             >
-                              ${(item.unitPrice * item.quantity).toFixed(2)}
+                              {formatCurrency(item.unitPrice * item.quantity)}
                             </p>
                             <p className="text-gray-600">
-                              ${item.unitPrice.toFixed(2)} each
+                              {formatCurrency(item.unitPrice)} each
                             </p>
                           </div>
                         </div>
@@ -210,7 +211,7 @@ export default function OrderTracking() {
                       className="text-xl font-bold"
                       style={{ color: '#7B4F2E' }}
                     >
-                      ${order.totalPrice.toFixed(2)}
+                      {formatCurrency(order.totalPrice)}
                     </span>
                   </div>
                 </div>

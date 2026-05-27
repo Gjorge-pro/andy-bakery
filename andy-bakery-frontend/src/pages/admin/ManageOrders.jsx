@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminNavbar';
 import Spinner from '../../components/Spinner';
 import axiosInstance from '../../api/axiosInstance';
+import { formatCurrency } from '../../utils/currency';
 
 const brown = '#8B5A2B';
 
@@ -135,7 +136,7 @@ export default function ManageOrders() {
                         className="text-lg font-bold"
                         style={{ color: brown }}
                       >
-                        ${order.totalPrice.toFixed(2)}
+                        {formatCurrency(order.totalPrice)}
                       </p>
                     </div>
 
@@ -242,10 +243,10 @@ export default function ManageOrders() {
                                   className="font-semibold"
                                   style={{ color: brown }}
                                 >
-                                  ${(item.unitPrice * item.quantity).toFixed(2)}
+                                  {formatCurrency(item.unitPrice * item.quantity)}
                                 </p>
                                 <p className="text-xs text-gray-600">
-                                  ${item.unitPrice.toFixed(2)} each
+                                  {formatCurrency(item.unitPrice)} each
                                 </p>
                               </div>
                             </div>

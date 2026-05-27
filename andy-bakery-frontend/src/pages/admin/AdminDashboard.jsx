@@ -12,6 +12,7 @@ import AdminLayout from '../../components/AdminNavbar';
 import Spinner from '../../components/Spinner';
 import axiosInstance from '../../api/axiosInstance';
 import socket, { EVENTS } from '../../socket';
+import { formatCurrency } from '../../utils/currency';
 
 const brown = '#8B5A2B';
 
@@ -155,7 +156,7 @@ export default function AdminDashboard() {
   const statCards = [
     { label: 'Total Products', value: stats.productCount, color: '#8B5A2B' },
     { label: 'Total Orders', value: stats.orderCount, color: '#8B5A2B' },
-    { label: 'Total Revenue', value: `$${stats.totalRevenue.toFixed(2)}`, color: '#8B5A2B' },
+    { label: 'Total Revenue', value: formatCurrency(stats.totalRevenue), color: '#8B5A2B' },
     { label: 'Pending Orders', value: stats.pendingOrders, color: '#8B5A2B' },
   ];
 
@@ -264,7 +265,7 @@ export default function AdminDashboard() {
                           {order.customerName}
                         </td>
                         <td className="px-6 py-4 font-semibold" style={{ color: brown }}>
-                          ${order.totalPrice.toFixed(2)}
+                          {formatCurrency(order.totalPrice)}
                         </td>
                         <td className="px-6 py-4">
                           <span

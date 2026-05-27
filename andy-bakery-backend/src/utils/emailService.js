@@ -5,6 +5,7 @@
  */
 
 const nodemailer = require('nodemailer');
+const { formatCurrency } = require('../utils/currency');
 
 /**
  * Gmail SMTP Configuration - Production Ready
@@ -91,7 +92,7 @@ const formatOrderItems = (orderItems) => {
     .map((item) => {
       const productName = item.product?.name || 'Bakery item';
       const lineTotal = item.quantity * item.unitPrice;
-      return `${productName} x ${item.quantity} - $${lineTotal.toFixed(2)}`;
+      return `${productName} x ${item.quantity} - ${formatCurrency(lineTotal)}`;
     })
     .join('\n');
 };
@@ -127,7 +128,7 @@ const sendOrderConfirmationEmail = async (order) => {
         '─────────────────',
         formatOrderItems(order.orderItems),
         '─────────────────',
-        `Total: $${order.totalPrice.toFixed(2)}`,
+        `Total: ${formatCurrency(order.totalPrice)}`,
         '',
         `Delivery Address:`,
         order.deliveryAddress,
@@ -186,7 +187,7 @@ const sendAdminNotificationEmail = async (order) => {
         'Items:',
         formatOrderItems(order.orderItems),
         '',
-        `Total: $${order.totalPrice.toFixed(2)}`,
+        `Total: ${formatCurrency(order.totalPrice)}`,
         `Status: ${order.status}`,
         '',
         `Order ID: ${order.id}`,
