@@ -96,8 +96,16 @@ export default function AdminLayout({ children, pageTitle, pageSubtitle }) {
         className="flex-grow flex flex-col"
         style={{ marginLeft: '260px' }}
       >
-        {/* Top Header */}
-        <div className="p-7" style={{ paddingLeft: '28px', paddingRight: '28px', paddingTop: '20px' }}>
+        {/* Top Header - Sticky */}
+        <div 
+          className="sticky top-0 z-40 p-7 backdrop-blur-sm"
+          style={{ 
+            paddingLeft: '28px', 
+            paddingRight: '28px', 
+            paddingTop: '20px',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          }}
+        >
           <div
             className="bg-white rounded-3xl p-6 flex items-center justify-between shadow-sm"
             style={{
@@ -208,7 +216,7 @@ export default function AdminLayout({ children, pageTitle, pageSubtitle }) {
 
         {/* Page Content */}
         <div
-          className="flex-grow px-7 pb-8"
+          className="flex-grow px-7 pb-8 overflow-y-auto pt-4"
           style={{ paddingLeft: '28px', paddingRight: '28px' }}
         >
           {pageTitle && (
