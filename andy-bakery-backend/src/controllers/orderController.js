@@ -100,15 +100,15 @@ const sendOrderConfirmationEmail = async (order) => {
     };
 
     await Promise.race([
-      transporter.sendMail(mailOptions),
+  transporter.sendMail(mailOptions),
 
-      new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error('Email sending timeout')),
-          15000
-        )
-      ),
-    ]);
+  new Promise((_, reject) =>
+    setTimeout(
+      () => reject(new Error('Email sending timeout')),
+      5000
+    )
+  ),
+]);
 
     console.log(
       `✅ Order confirmation email sent to ${order.customerEmail}`
@@ -204,8 +204,14 @@ const createOrder = async (req, res, next) => {
       });
     });
 
-    // Email should NEVER stop order creation
-    await sendOrderConfirmationEmail(order);
+       // Email runs in background so order creation stays fast
+    sendOrderConfirmationEmail(order)
+      .catch((err) => {
+        console.error(
+          'Async email failed:',
+          err.message
+        );
+      });
 
     const io = getIO();
 
