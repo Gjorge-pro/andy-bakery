@@ -88,8 +88,8 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-[#8B5A2B] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#8B5A2B] via-[#9C6630] to-[#A36A34] relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.07] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
             Ready to Order?
@@ -99,7 +99,7 @@ export default function Home() {
           </p>
           <Link
             to="/products"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-white text-[#7B4F2E] font-bold rounded-full hover:bg-[#FFF8F0] transition-colors shadow-lg group"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-white/95 backdrop-blur-sm text-[#7B4F2E] font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group"
           >
             Start Your Order
             <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
