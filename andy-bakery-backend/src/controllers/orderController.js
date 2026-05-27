@@ -37,19 +37,25 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
+connectionTimeout: 20000,
+greetingTimeout: 20000,
+socketTimeout: 20000,
+dnsTimeout: 20000,
 });
 
 // Verify SMTP during startup
-transporter.verify((error) => {
-  if (error) {
-    console.error('❌ SMTP verification failed:', error.message);
-  } else {
-    console.log('✅ SMTP server ready');
-  }
-});
+setTimeout(() => {
+  transporter.verify((error) => {
+    if (error) {
+      console.warn(
+        '⚠️ SMTP verification warning:',
+        error.message
+      );
+    } else {
+      console.log('✅ SMTP server ready');
+    }
+  });
+}, 5000);
 
 const formatOrderItems = (orderItems) => {
   return orderItems
