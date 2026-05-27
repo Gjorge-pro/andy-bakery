@@ -1,0 +1,5 @@
+// .gitignore for frontend project
+node_modules/
+/dist/
+.env
+.env.*
