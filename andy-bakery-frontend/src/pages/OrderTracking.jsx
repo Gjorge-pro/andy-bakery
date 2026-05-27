@@ -14,7 +14,7 @@ const statusColors = {
 };
 
 export default function OrderTracking() {
-  const [email, setEmail] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [orders, setOrders] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -52,16 +52,24 @@ export default function OrderTracking() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!email.trim()) {
-      setError('Please enter the email used when ordering');
+    const input = searchInput.trim();
+
+    if (!input) {
+      setError('Please enter your email or phone number');
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
+
+      // Auto-detect: email contains "@", otherwise treat as phone
+      const params = input.includes('@')
+        ? { email: input }
+        : { phone: input };
+
       const response = await axiosInstance.get('/orders/track', {
-        params: { email: email.trim() },
+        params,
       });
 
       setOrders(response.data);
@@ -89,7 +97,7 @@ export default function OrderTracking() {
               Track Your Order
             </h1>
             <p className="text-gray-600 text-lg">
-              Enter the email used when ordering to view your Andy Bakery orders.
+              Enter the email or phone number used when ordering to view your Andy Bakery orders.
             </p>
           </div>
 
@@ -98,14 +106,14 @@ export default function OrderTracking() {
             className="bg-white rounded-lg shadow-md p-6 mb-8"
           >
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Order Update Email
+              Email or Phone Number
             </label>
             <div className="flex flex-col sm:flex-row gap-3">
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email used when ordering"
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Enter email or phone number"
                 className="flex-grow px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
                 required
                 disabled={loading}

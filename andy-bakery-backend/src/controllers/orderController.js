@@ -156,19 +156,38 @@ const getOrders = async (req, res, next) => {
 
 const trackOrders = async (req, res, next) => {
   try {
-    const { email } = req.query;
+    const { email, phone } = req.query;
 
-    if (!email) {
+    // Require at least one search parameter
+    if (!email && !phone) {
       res.status(400);
-      throw new Error('Email is required');
+      throw new Error('Email or phone number is required');
+    }
+
+    // Build OR query for email and/or phone
+    const whereConditions = [];
+
+    if (email) {
+      whereConditions.push({
+        customerEmail: {
+          equals: email.trim(),
+          mode: 'insensitive',
+        },
+      });
+    }
+
+    if (phone) {
+      whereConditions.push({
+        customerPhone: {
+          equals: phone.trim(),
+          mode: 'exact',
+        },
+      });
     }
 
     const orders = await prisma.order.findMany({
       where: {
-        customerEmail: {
-          equals: email,
-          mode: 'insensitive',
-        },
+        OR: whereConditions,
       },
 
       include: orderInclude,
