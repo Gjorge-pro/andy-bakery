@@ -1,15 +1,19 @@
-const cloudinary = require('cloudinary').v2;
+const express = require('express');
 const multer = require('multer');
-const streamifier = require('streamifier');
+const authMiddleware = require('../middleware/authMiddleware');
+const { cloudinaryUpload } = require('../middleware/cloudinaryMiddleware');
+const { body } = require('express-validator');
+const validate = require('../middleware/validate');
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+const {
+  createProduct,
+  getProducts,
+  updateProduct,
+  deleteProduct,
+} = require('../controllers/productController');
 
 /**
- * Allowed image types
+ * Allowed image types for file validation
  */
 const allowedMimeTypes = [
   'image/jpeg',
@@ -19,84 +23,49 @@ const allowedMimeTypes = [
 ];
 
 /**
- * File validation
+ * File validation callback
  */
 const fileFilter = (req, file, cb) => {
   if (!allowedMimeTypes.includes(file.mimetype)) {
     const error = new Error(
       'Invalid file type. Only JPEG, PNG, and WebP allowed.'
     );
-
     error.statusCode = 400;
     return cb(error, false);
   }
-
   cb(null, true);
 };
 
 /**
- * Multer memory storage
- */
-const storage = multer.memoryStorage();
-
-/**
- * Multer upload middleware
+ * Multer configuration - store in memory for Cloudinary upload
  */
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB
   },
   fileFilter,
 });
 
-/**
- * Upload buffer to Cloudinary
- */
-const uploadToCloudinary = (fileBuffer, folder = 'andy-bakery/products') => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        resource_type: 'image',
-        transformation: [
-          {
-            quality: 'auto',
-            fetch_format: 'auto',
-          },
-        ],
-      },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
-      }
-    );
-
-    streamifier.createReadStream(fileBuffer).pipe(stream);
-  });
-};
-
-// ── Import product controller ─────────────────────────────────────
-const {
-  createProduct,
-  getProducts,
-  updateProduct,
-  deleteProduct,
-} = require('../controllers/productController');
-
-// ── Create router ─────────────────────────────────────────────────
-const express = require('express');
-const authMiddleware = require('../middleware/authMiddleware');
-const { body } = require('express-validator');
-const validate = require('../middleware/validate');
-
 const router = express.Router();
 
 // ── Product routes ────────────────────────────────────────────────
+
+/**
+ * POST /api/products
+ * Create new product with optional image upload
+ * Middleware chain:
+ *   1. authMiddleware - verify admin token
+ *   2. upload.single('image') - parse multipart form (multer)
+ *   3. cloudinaryUpload - upload to Cloudinary if image provided
+ *   4. validate - check required fields
+ *   5. createProduct - create in database
+ */
 router.post(
   '/',
   authMiddleware,
   upload.single('image'),
+  cloudinaryUpload,
   [
     body('name').trim().notEmpty().withMessage('Product name is required'),
     body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
@@ -107,8 +76,28 @@ router.post(
   createProduct
 );
 
+/**
+ * GET /api/products
+ * Get all products (public endpoint)
+ */
 router.get('/', getProducts);
-router.put('/:id', authMiddleware, upload.single('image'), updateProduct);
+
+/**
+ * PUT /api/products/:id
+ * Update product with optional image replacement
+ */
+router.put(
+  '/:id',
+  authMiddleware,
+  upload.single('image'),
+  cloudinaryUpload,
+  updateProduct
+);
+
+/**
+ * DELETE /api/products/:id
+ * Delete product
+ */
 router.delete('/:id', authMiddleware, deleteProduct);
 
 module.exports = router;

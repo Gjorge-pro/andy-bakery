@@ -102,29 +102,68 @@ export default function ManageProducts() {
 
     try {
       setIsSubmitting(true);
+      setError(null);
+
+      // Validation: For new products, image is required
+      if (!editingId && !imageFile && !formData.imageUrl) {
+        setError('Please upload an image for the new product');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Validation: Required fields
+      if (!formData.name || !formData.description || !formData.price || !formData.category) {
+        setError('Please fill in all required fields');
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log('📤 Submitting product...', {
+        name: formData.name,
+        hasImage: !!imageFile,
+        hasExistingUrl: !!formData.imageUrl,
+        isUpdating: !!editingId,
+      });
+
       const payload = new FormData();
       payload.append('name', formData.name);
       payload.append('description', formData.description);
       payload.append('price', formData.price);
       payload.append('category', formData.category);
       payload.append('isAvailable', formData.isAvailable);
-      if (formData.imageUrl) payload.append('imageUrl', formData.imageUrl);
-      if (imageFile) payload.append('image', imageFile);
+
+      // Only append existing imageUrl if not uploading a new image
+      if (formData.imageUrl && !imageFile) {
+        payload.append('imageUrl', formData.imageUrl);
+      }
+
+      // Append new image file if selected
+      if (imageFile) {
+        console.log('📁 Attaching image:', imageFile.name);
+        payload.append('image', imageFile);
+      }
 
       const config = {
         headers: { 'Content-Type': 'multipart/form-data' },
       };
 
+      let response;
       if (editingId) {
-        await axiosInstance.put(`/products/${editingId}`, payload, config);
+        console.log('✏️  Updating product:', editingId);
+        response = await axiosInstance.put(`/products/${editingId}`, payload, config);
       } else {
-        await axiosInstance.post('/products', payload, config);
+        console.log('🆕 Creating new product');
+        response = await axiosInstance.post('/products', payload, config);
       }
+
+      console.log('✅ Success:', response.data);
       fetchProducts();
       handleCloseModal();
+      alert(`Product ${editingId ? 'updated' : 'created'} successfully!`);
     } catch (err) {
-      console.error('Error saving product:', err);
-      setError(err.response?.data?.message || 'Failed to save product');
+      console.error('❌ Error saving product:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to save product';
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -275,6 +314,13 @@ export default function ManageProducts() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {/* Modal Error Message */}
+              {error && (
+                <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
               {/* Name */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -345,8 +391,13 @@ export default function ManageProducts() {
               {/* Image */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Product Image
+                  Product Image {!editingId && <span className="text-red-600">*</span>}
                 </label>
+                <p className="text-xs text-gray-600 mb-3">
+                  {!editingId
+                    ? '📷 Image is required for new products. Supported formats: JPEG, PNG, WebP (Max 5MB)'
+                    : '📷 Leave blank to keep existing image. Supported formats: JPEG, PNG, WebP (Max 5MB)'}
+                </p>
                 <input
                   type="file"
                   accept="image/*"
