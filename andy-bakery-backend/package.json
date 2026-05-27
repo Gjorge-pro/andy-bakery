@@ -4,8 +4,9 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js",
-    "seed": "node src/scripts/createAdmin.js"
+    "start": "prisma migrate deploy && node server.js",
+    "seed": "node src/scripts/createAdmin.js",
+    "check-db": "node scripts/checkDatabase.js"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

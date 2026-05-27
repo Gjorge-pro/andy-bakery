@@ -8,12 +8,17 @@ const parseBoolean = (value) => {
 
 const getProducts = async (req, res, next) => {
   try {
+    console.log('📦 [GET /api/products] Fetching products...');
+    
     const products = await prisma.product.findMany({
       orderBy: { createdAt: 'desc' },
     });
 
+    console.log(`✅ [GET /api/products] Found ${products.length} products`);
     res.json(products);
   } catch (error) {
+    console.error('❌ [GET /api/products] Error:', error.message);
+    console.error('Stack:', error.stack);
     next(error);
   }
 };

@@ -77,6 +77,29 @@ app.get('/', (req, res) => {
 app.use(errorMiddleware);
 
 // ── Start Server ─────────────────────────────────────────────────
-server.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-});
+const prisma = require('./src/db/prisma');
+
+async function startServer() {
+  try {
+    // Test database connection
+    console.log('🔍 Testing database connection...');
+    await prisma.$executeRaw`SELECT 1`;
+    console.log('✅ Database connected successfully');
+    
+    // Check products table
+    const productCount = await prisma.product.count();
+    console.log(`✅ Products table ready (${productCount} products)`);
+    
+    server.listen(PORT, () => {
+      console.log(`✅ Server running on http://localhost:${PORT}`);
+      console.log(`📍 API Base: http://localhost:${PORT}/api`);
+      console.log(`🛍️  Products: http://localhost:${PORT}/api/products`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error.message);
+    console.error('Make sure DATABASE_URL is set and database is accessible');
+    process.exit(1);
+  }
+}
+
+startServer();
